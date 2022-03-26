@@ -181,7 +181,7 @@ namespace arduino {
             return dimensions().bounds();
         }
         
-        inline gfx::gfx_result point(gfx::point16 location, pixel_type color) {
+        gfx::gfx_result point(gfx::point16 location, pixel_type color) {
             if(!initialize()) return gfx::gfx_result::device_error;
             else bus::dma_wait();
             gfx::gfx_result rr = commit_batch();
