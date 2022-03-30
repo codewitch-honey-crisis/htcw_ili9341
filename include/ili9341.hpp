@@ -181,8 +181,26 @@ namespace arduino {
             return dimensions().bounds();
         }
         
-        inline gfx::gfx_result point(gfx::point16 location, pixel_type color) {
-            return fill({location.x,location.y,location.x,location.y},color);
+        gfx::gfx_result point(gfx::point16 location, pixel_type color) {
+            if(!initialize()) return gfx::gfx_result::device_error;
+            else bus::dma_wait();
+            gfx::gfx_result rr = commit_batch();
+            if(rr!=gfx::gfx_result::success) {
+                return rr;
+            }
+            gfx::rect16 bounds(location.x,location.y,dimensions().width,dimensions().height);
+            if(!bounds.intersects(this->bounds())) return gfx::gfx_result::success;
+            const gfx::rect16 r = bounds.normalize().crop(this->bounds());
+            bus::begin_write();
+            bus::begin_transaction();
+            set_window(r);
+            bus::write_raw16(color.native_value);
+            bus::end_transaction();
+            bus::end_write();
+            if(location.x==319) {
+                ++m_row;
+            }
+            return gfx::gfx_result::success;
         }
         inline gfx::gfx_result point_async(gfx::point16 location, pixel_type color) {
             return point(location,color);
@@ -194,6 +212,7 @@ namespace arduino {
                 *out_color = pixel_type();
                 return gfx::gfx_result::success;
             }
+            m_row = -1;
             bus::dma_wait();
             bus::set_speed_multiplier(read_speed_multiplier);
             bus::begin_read();
@@ -212,7 +231,7 @@ namespace arduino {
             if(!initialize()) return gfx::gfx_result::device_error;
             else bus::dma_wait();
             gfx::gfx_result rr = commit_batch();
-
+            m_row = -1;
             if(rr!=gfx::gfx_result::success) {
                 return rr;
             }
@@ -242,12 +261,14 @@ namespace arduino {
             if(rr != gfx::gfx_result::success) {
                 return rr;
             }
+            m_row = -1;
             return copy_from_impl(src_rect,src,location,false);
         }
         template<typename Source>
         inline gfx::gfx_result copy_from_async(const gfx::rect16& src_rect,const Source& src,gfx::point16 location) {
             if(!initialize()) return gfx::gfx_result::device_error;
             gfx::gfx_result rr = commit_batch();
+            m_row = -1;
             if(rr != gfx::gfx_result::success) {
                 return rr;
             }
@@ -260,6 +281,7 @@ namespace arduino {
         template<typename Destination>
         inline gfx::gfx_result copy_to(const gfx::rect16& src_rect,Destination& dst,gfx::point16 location) const {
             if(!src_rect.intersects(bounds())) return gfx::gfx_result::success;
+            m_row = -1;
             gfx::rect16 srcr = src_rect.crop(bounds());
             gfx::rect16 dstr= gfx::rect16(location,srcr.dimensions()).crop(dst.bounds());
             srcr=gfx::rect16(srcr.location(),dstr.dimensions());
@@ -275,6 +297,7 @@ namespace arduino {
                 bus::end_transaction();
                 bus::end_write();
                 m_in_batch = false;
+                m_row = -1;
             }
             return gfx::gfx_result::success;
         }
@@ -284,6 +307,7 @@ namespace arduino {
         gfx::gfx_result begin_batch(const gfx::rect16& bounds) {
             if(!initialize()) return gfx::gfx_result::device_error;
             gfx::gfx_result rr = commit_batch();
+            m_row = -1;
             if(rr!=gfx::gfx_result::success) {
                 return rr;
             }
@@ -312,6 +336,7 @@ namespace arduino {
         bool m_initialized;
         bool m_dma_initialized;
         bool m_in_batch;
+        static int m_row;
         static void set_window(const gfx::rect16& bounds, bool read=false) {
             bus::busy_check();
             driver::dc_command();
@@ -319,11 +344,13 @@ namespace arduino {
             driver::dc_data();
             bus::write_raw16(bounds.x1);
             bus::write_raw16(bounds.x2);
-            driver::dc_command();
-            bus::write_raw8(0x2B);
-            driver::dc_data();
-            bus::write_raw16(bounds.y1);
-            bus::write_raw16(bounds.y2);
+            if(m_row!=bounds.x1) {
+                driver::dc_command();
+                bus::write_raw8(0x2B);
+                driver::dc_data();
+                bus::write_raw16(bounds.y1);
+                bus::write_raw16(bounds.y2);
+            }
             driver::dc_command();
             bus::write_raw8(read?0x2E:0x2C);
             driver::dc_data();
@@ -637,4 +664,19 @@ namespace arduino {
         }
         
     };
+    template<int8_t PinDC, 
+        int8_t PinRst, 
+        int8_t PinBL, 
+        typename Bus, 
+        uint8_t Rotation, 
+        bool BacklightHigh, 
+        unsigned int WriteSpeedPercent,
+        unsigned int ReadSpeedPercent> int ili9341<PinDC, 
+                                                PinRst, 
+                                                PinBL, 
+                                                Bus, 
+                                                Rotation, 
+                                                BacklightHigh, 
+                                                WriteSpeedPercent,
+                                                ReadSpeedPercent>::m_row = -1;
 }
