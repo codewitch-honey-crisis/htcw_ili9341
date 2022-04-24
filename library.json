@@ -1,6 +1,6 @@
 {
     "name": "htcw_ili9341",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "description": "Provides support for the ILI9341 display device w/ GFX",
     "keywords": ["tft","ili9341","graphics","drawing"],
     "authors": {
@@ -20,8 +20,8 @@
         "url": "https://github.com/codewitch-honey-crisis/htcw_ili9341.git"
     },
     "dependencies": {
-        "codewitch-honey-crisis/htcw_gfx": "^1.1.4",
-        "codewitch-honey-crisis/htcw_tft_io": "^1.0.9"
+        "codewitch-honey-crisis/htcw_gfx": "^1.1.6",
+        "codewitch-honey-crisis/htcw_tft_io": "^1.1.0"
     },
     "examples": [
         {

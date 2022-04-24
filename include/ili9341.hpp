@@ -27,7 +27,7 @@ namespace arduino {
         using driver = tft_driver<PinDC, PinRst, PinBL, Bus>;
         using bus = Bus;
         using pixel_type = gfx::rgb_pixel<16>;
-        using caps = gfx::gfx_caps<false,(bus::dma_size>0),true,true,false,bus::readable,true>;
+        using caps = gfx::gfx_caps<false,(bus::dma_size>0),true,true,false,bus::readable,bus::readable>;
         ili9341() : m_initialized(false), m_dma_initialized(false), m_in_batch(false) {
         }
         ~ili9341() {
