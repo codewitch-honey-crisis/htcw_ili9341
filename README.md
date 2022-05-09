@@ -14,11 +14,8 @@ platform = espressif32
 board = node32s
 framework = arduino
 lib_deps = 
-	codewitch-honey-crisis/htcw_ili9341@^1.1.6
+	codewitch-honey-crisis/htcw_ili9341@^1.1.7
 lib_ldf_mode = deep
 build_unflags=-std=gnu++11
 build_flags=-std=gnu++14
-;            -DESP_WROVER_KIT 
-; define above if you're using the Espressif 
-; ESP-WROVER-Devkit 4.1  
 ```

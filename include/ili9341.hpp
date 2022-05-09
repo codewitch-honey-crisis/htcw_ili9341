@@ -12,25 +12,27 @@ namespace arduino {
             typename Bus, 
             uint8_t Rotation = 0, 
             bool BacklightHigh=false, 
+            bool AltDisplay=false,
             unsigned int WriteSpeedPercent = 200,
             unsigned int ReadSpeedPercent = WriteSpeedPercent>
-    struct ili9341 final {
+    struct ili9341x final {
         constexpr static const int8_t pin_dc = PinDC;
         constexpr static const int8_t pin_rst = PinRst;
         constexpr static const int8_t pin_bl = PinBL;
         constexpr static const uint8_t rotation = Rotation & 3;
         constexpr static const size_t max_dma_size = 320*240*2;
         constexpr static const bool backlight_high = BacklightHigh;
+        constexpr static const bool alt_display = AltDisplay;
         constexpr static const float write_speed_multiplier = (WriteSpeedPercent/100.0);
         constexpr static const float read_speed_multiplier = (ReadSpeedPercent/100.0);
-        using type = ili9341;
+        using type = ili9341x;
         using driver = tft_driver<PinDC, PinRst, PinBL, Bus>;
         using bus = Bus;
         using pixel_type = gfx::rgb_pixel<16>;
-        using caps = gfx::gfx_caps<false,(bus::dma_size>0),true,true,false,bus::readable,bus::readable>;
-        ili9341() : m_initialized(false), m_dma_initialized(false), m_in_batch(false) {
+        using caps = gfx::gfx_caps<false,(bus::dma_size>0),true,true,false,bus::readable,true>;
+        ili9341x() : m_initialized(false), m_dma_initialized(false), m_in_batch(false) {
         }
-        ~ili9341() {
+        ~ili9341x() {
             if(m_dma_initialized) {
                 bus::deinitialize_dma();
             }
@@ -45,114 +47,230 @@ namespace arduino {
                     bus::set_speed_multiplier(write_speed_multiplier);
                     bus::begin_write();
                     bus::begin_transaction();
-                    driver::send_command(0xEF);
-                    driver::send_data8(0x03);
-                    driver::send_data8(0x80);
-                    driver::send_data8(0x02);
+                    if(alt_display) {    
+                        driver::send_command(0xCF);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0XC1);
+                        driver::send_data8(0X30);
 
-                    driver::send_command(0xCF);
-                    driver::send_data8(0x00);
-                    driver::send_data8(0XC1);
-                    driver::send_data8(0X30);
+                        driver::send_command(0xED);
+                        driver::send_data8(0x64);
+                        driver::send_data8(0x03);
+                        driver::send_data8(0X12);
+                        driver::send_data8(0X81);
 
-                    driver::send_command(0xED);
-                    driver::send_data8(0x64);
-                    driver::send_data8(0x03);
-                    driver::send_data8(0X12);
-                    driver::send_data8(0X81);
+                        driver::send_command(0xE8);
+                        driver::send_data8(0x85);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x78);
 
-                    driver::send_command(0xE8);
-                    driver::send_data8(0x85);
-                    driver::send_data8(0x00);
-                    driver::send_data8(0x78);
+                        driver::send_command(0xCB);
+                        driver::send_data8(0x39);
+                        driver::send_data8(0x2C);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x34);
+                        driver::send_data8(0x02);
 
-                    driver::send_command(0xCB);
-                    driver::send_data8(0x39);
-                    driver::send_data8(0x2C);
-                    driver::send_data8(0x00);
-                    driver::send_data8(0x34);
-                    driver::send_data8(0x02);
+                        driver::send_command(0xF7);
+                        driver::send_data8(0x20);
 
-                    driver::send_command(0xF7);
-                    driver::send_data8(0x20);
+                        driver::send_command(0xEA);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
 
-                    driver::send_command(0xEA);
-                    driver::send_data8(0x00);
-                    driver::send_data8(0x00);
-                    driver::send_command(0xC0);    //Power control
-                    driver::send_data8(0x23);   //VRH[5:0]
+                        driver::send_command(0xC0); //Power control
+                        driver::send_data8(0x10); //VRH[5:0]
 
-                    driver::send_command(0xC1);    //Power control
-                    driver::send_data8(0x10);   //SAP[2:0];BT[3:0]
+                        driver::send_command(0xC1); //Power control
+                        driver::send_data8(0x00); //SAP[2:0];BT[3:0]
 
-                    driver::send_command(0xC5);    //VCM control
-                    driver::send_data8(0x3e);
-                    driver::send_data8(0x28);
+                        driver::send_command(0xC5); //VCM control
+                        driver::send_data8(0x30);
+                        driver::send_data8(0x30);
 
-                    driver::send_command(0xC7);    //VCM control2
-                    driver::send_data8(0x86);  //--
+                        driver::send_command(0xC7); //VCM control2
+                        driver::send_data8(0xB7); //--
 
-                    driver::send_command(0x36);    // Memory Access Control
-                    driver::send_data8(0x40 | 0x08); // Rotation 0 (portrait mode)
+                        driver::send_command(0x3A);
+                        driver::send_data8(0x55);
 
-                    driver::send_command(0x3A);
-                    driver::send_data8(0x55);
+                        driver::send_command(0x36); // Memory Access Control
+                        driver::send_data8(0x08); // Rotation 0 (portrait mode)
 
-                    driver::send_command(0xB1);
-                    driver::send_data8(0x00);
-                    driver::send_data8(0x13); // 0x18 79Hz, 0x1B default 70Hz, 0x13 100Hz
+                        driver::send_command(0xB1);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x1A);
 
-                    driver::send_command(0xB6);    // Display Function Control
-                    driver::send_data8(0x08);
-                    driver::send_data8(0x82);
-                    driver::send_data8(0x27);
+                        driver::send_command(0xB6); // Display Function Control
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x82);
+                        driver::send_data8(0x27);
 
-                    driver::send_command(0xF2);    // 3Gamma Function Disable
-                    driver::send_data8(0x00);
+                        driver::send_command(0xF2); // 3Gamma Function Disable
+                        driver::send_data8(0x00);
 
-                    driver::send_command(0x26);    //Gamma curve selected
-                    driver::send_data8(0x01);
+                        driver::send_command(0x26); //Gamma curve selected
+                        driver::send_data8(0x01);
 
-                    driver::send_command(0xE0);    //Set Gamma
-                    driver::send_data8(0x0F);
-                    driver::send_data8(0x31);
-                    driver::send_data8(0x2B);
-                    driver::send_data8(0x0C);
-                    driver::send_data8(0x0E);
-                    driver::send_data8(0x08);
-                    driver::send_data8(0x4E);
-                    driver::send_data8(0xF1);
-                    driver::send_data8(0x37);
-                    driver::send_data8(0x07);
-                    driver::send_data8(0x10);
-                    driver::send_data8(0x03);
-                    driver::send_data8(0x0E);
-                    driver::send_data8(0x09);
-                    driver::send_data8(0x00);
+                        driver::send_command(0xE0); //Set Gamma
+                        driver::send_data8(0x0F);
+                        driver::send_data8(0x2A);
+                        driver::send_data8(0x28);
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x0E);
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x54);
+                        driver::send_data8(0xA9);
+                        driver::send_data8(0x43);
+                        driver::send_data8(0x0A);
+                        driver::send_data8(0x0F);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
 
-                    driver::send_command(0xE1);    //Set Gamma
-                    driver::send_data8(0x00);
-                    driver::send_data8(0x0E);
-                    driver::send_data8(0x14);
-                    driver::send_data8(0x03);
-                    driver::send_data8(0x11);
-                    driver::send_data8(0x07);
-                    driver::send_data8(0x31);
-                    driver::send_data8(0xC1);
-                    driver::send_data8(0x48);
-                    driver::send_data8(0x08);
-                    driver::send_data8(0x0F);
-                    driver::send_data8(0x0C);
-                    driver::send_data8(0x31);
-                    driver::send_data8(0x36);
-                    driver::send_data8(0x0F);
+                        driver::send_command(0XE1); //Set Gamma
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x15);
+                        driver::send_data8(0x17);
+                        driver::send_data8(0x07);
+                        driver::send_data8(0x11);
+                        driver::send_data8(0x06);
+                        driver::send_data8(0x2B);
+                        driver::send_data8(0x56);
+                        driver::send_data8(0x3C);
+                        driver::send_data8(0x05);
+                        driver::send_data8(0x10);
+                        driver::send_data8(0x0F);
+                        driver::send_data8(0x3F);
+                        driver::send_data8(0x3F);
+                        driver::send_data8(0x0F);
 
-                    driver::send_command(0x11);    //Exit Sleep
+                        driver::send_command(0x2B);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x01);
+                        driver::send_data8(0x3f);
+
+                        driver::send_command(0x2A);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0xef);
+
+                        driver::send_command(0x11); //Exit Sleep
+                    } else {
+                        driver::send_command(0xEF);
+                        driver::send_data8(0x03);
+                        driver::send_data8(0x80);
+                        driver::send_data8(0x02);
+
+                        driver::send_command(0xCF);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0XC1);
+                        driver::send_data8(0X30);
+
+                        driver::send_command(0xED);
+                        driver::send_data8(0x64);
+                        driver::send_data8(0x03);
+                        driver::send_data8(0X12);
+                        driver::send_data8(0X81);
+
+                        driver::send_command(0xE8);
+                        driver::send_data8(0x85);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x78);
+
+                        driver::send_command(0xCB);
+                        driver::send_data8(0x39);
+                        driver::send_data8(0x2C);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x34);
+                        driver::send_data8(0x02);
+
+                        driver::send_command(0xF7);
+                        driver::send_data8(0x20);
+
+                        driver::send_command(0xEA);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x00);
+                        driver::send_command(0xC0);    //Power control
+                        driver::send_data8(0x23);   //VRH[5:0]
+
+                        driver::send_command(0xC1);    //Power control
+                        driver::send_data8(0x10);   //SAP[2:0];BT[3:0]
+
+                        driver::send_command(0xC5);    //VCM control
+                        driver::send_data8(0x3e);
+                        driver::send_data8(0x28);
+
+                        driver::send_command(0xC7);    //VCM control2
+                        driver::send_data8(0x86);  //--
+
+                        driver::send_command(0x36);    // Memory Access Control
+                        driver::send_data8(0x40 | 0x08); // Rotation 0 (portrait mode)
+
+                        driver::send_command(0x3A);
+                        driver::send_data8(0x55);
+
+                        driver::send_command(0xB1);
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x13); // 0x18 79Hz, 0x1B default 70Hz, 0x13 100Hz
+
+                        driver::send_command(0xB6);    // Display Function Control
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x82);
+                        driver::send_data8(0x27);
+
+                        driver::send_command(0xF2);    // 3Gamma Function Disable
+                        driver::send_data8(0x00);
+
+                        driver::send_command(0x26);    //Gamma curve selected
+                        driver::send_data8(0x01);
+
+                        driver::send_command(0xE0);    //Set Gamma
+                        driver::send_data8(0x0F);
+                        driver::send_data8(0x31);
+                        driver::send_data8(0x2B);
+                        driver::send_data8(0x0C);
+                        driver::send_data8(0x0E);
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x4E);
+                        driver::send_data8(0xF1);
+                        driver::send_data8(0x37);
+                        driver::send_data8(0x07);
+                        driver::send_data8(0x10);
+                        driver::send_data8(0x03);
+                        driver::send_data8(0x0E);
+                        driver::send_data8(0x09);
+                        driver::send_data8(0x00);
+
+                        driver::send_command(0xE1);    //Set Gamma
+                        driver::send_data8(0x00);
+                        driver::send_data8(0x0E);
+                        driver::send_data8(0x14);
+                        driver::send_data8(0x03);
+                        driver::send_data8(0x11);
+                        driver::send_data8(0x07);
+                        driver::send_data8(0x31);
+                        driver::send_data8(0xC1);
+                        driver::send_data8(0x48);
+                        driver::send_data8(0x08);
+                        driver::send_data8(0x0F);
+                        driver::send_data8(0x0C);
+                        driver::send_data8(0x31);
+                        driver::send_data8(0x36);
+                        driver::send_data8(0x0F);
+
+                        driver::send_command(0x11);    //Exit Sleep   
+                    }
                     bus::end_transaction();
                     bus::end_write();
                     delay(120);
+
                     bus::begin_write();
                     bus::begin_transaction();
+
                     driver::send_command(0x29);    //Display on
                     bus::end_transaction();
                     bus::end_write();
@@ -670,13 +788,51 @@ namespace arduino {
         typename Bus, 
         uint8_t Rotation, 
         bool BacklightHigh, 
+        bool AltDisplay,
         unsigned int WriteSpeedPercent,
-        unsigned int ReadSpeedPercent> int ili9341<PinDC, 
+        unsigned int ReadSpeedPercent> int ili9341x<PinDC, 
                                                 PinRst, 
                                                 PinBL, 
                                                 Bus, 
                                                 Rotation, 
                                                 BacklightHigh, 
+                                                AltDisplay,
                                                 WriteSpeedPercent,
                                                 ReadSpeedPercent>::m_row = -1;
+
+template<int8_t PinDC, 
+            int8_t PinRst, 
+            int8_t PinBL, 
+            typename Bus, 
+            uint8_t Rotation = 0, 
+            bool BacklightHigh=false, 
+            unsigned int WriteSpeedPercent = 200,
+            unsigned int ReadSpeedPercent = WriteSpeedPercent>
+using ili9341v=ili9341x<PinDC, 
+                        PinRst, 
+                        PinBL, 
+                        Bus, 
+                        Rotation, 
+                        BacklightHigh, 
+                        true,
+                        WriteSpeedPercent,
+                        ReadSpeedPercent>;
+template<int8_t PinDC, 
+            int8_t PinRst, 
+            int8_t PinBL, 
+            typename Bus, 
+            uint8_t Rotation = 0, 
+            bool BacklightHigh=false, 
+            unsigned int WriteSpeedPercent = 200,
+            unsigned int ReadSpeedPercent = WriteSpeedPercent>
+using ili9341=ili9341x<PinDC, 
+                        PinRst, 
+                        PinBL, 
+                        Bus, 
+                        Rotation, 
+                        BacklightHigh, 
+                        false,
+                        WriteSpeedPercent,
+                        ReadSpeedPercent>;
+
 }
