@@ -678,7 +678,7 @@ namespace arduino {
                         if(rr!=gfx::gfx_result::success)
                             return rr;
                         pixel_type p;
-                        rr=gfx::convert_palette_to(src,pp,&p,nullptr);
+                        rr=gfx::convert_palette_from(src,pp,&p,nullptr);
                         if(gfx::gfx_result::success!=rr) {
                             return rr;
                         }
@@ -691,7 +691,7 @@ namespace arduino {
                     }
                 }
                 
-                rr=this_->batch_commit();
+                rr=this_->commit_batch();
                 
                 return rr;
             }

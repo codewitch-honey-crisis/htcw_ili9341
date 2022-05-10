@@ -1,6 +1,6 @@
 {
     "name": "htcw_ili9341",
-    "version": "1.1.7",
+    "version": "1.1.8",
     "description": "Provides support for the ILI9341 display device w/ GFX",
     "keywords": ["tft","ili9341","graphics","drawing"],
     "authors": {
