@@ -26,7 +26,7 @@ struct ili9341x final {
     constexpr static const int8_t pin_dc = PinDC;
     constexpr static const int8_t pin_rst = PinRst;
     constexpr static const int8_t pin_bl = PinBL;
-    constexpr static const uint8_t rotation = Rotation & 3;
+    constexpr static const uint8_t initial_rotation = Rotation & 3;
     constexpr static const size_t max_dma_size = 320 * 240 * 2;
     constexpr static const bool backlight_high = BacklightHigh;
     constexpr static const ili9341_display_type display_type = DisplayType;
@@ -52,6 +52,7 @@ struct ili9341x final {
             if (driver::initialize()) {
                 bus::begin_initialization();
                 bus::set_speed_multiplier(write_speed_multiplier);
+                m_rotation = initial_rotation;
                 bus::begin_write();
                 bus::begin_transaction();
                 if (display_type == ili9341_display_type::v_variant) {
@@ -354,7 +355,7 @@ struct ili9341x final {
                 bus::end_initialization();
                 bus::begin_write();
                 bus::begin_transaction();
-                apply_rotation();
+                apply_rotation(m_rotation);
                 bus::end_transaction();
                 bus::end_write();
                 if (pin_bl > -1) {
@@ -367,9 +368,10 @@ struct ili9341x final {
         }
         return m_initialized;
     }
-
+    inline uint8_t rotation() const { return m_rotation; }
+    inline void rotation(uint8_t value) { m_rotation = value & 3; apply_rotation(m_rotation); }
     inline gfx::size16 dimensions() const {
-        return rotation & 1 ? gfx::size16(320, 240) : gfx::size16(240, 320);
+        return m_rotation & 1 ? gfx::size16(320, 240) : gfx::size16(240, 320);
     }
     inline gfx::rect16 bounds() const {
         return dimensions().bounds();
@@ -533,6 +535,7 @@ struct ili9341x final {
 
    private:
     bool m_initialized;
+    uint8_t m_rotation;
     bool m_dma_initialized;
     bool m_in_batch;
     static int m_row;
@@ -832,10 +835,10 @@ struct ili9341x final {
                                                                                                                        ::do_draw(this, dstr, src, srcr, async);
     }
 
-    static void apply_rotation() {
+    static void apply_rotation(int rot) {
         bus::begin_write();
         driver::send_command(0x36);
-        switch (rotation) {
+        switch (rot&3) {
             case 0:
                 // portrait
                 if (display_type == ili9341_display_type::ili9342c) {
