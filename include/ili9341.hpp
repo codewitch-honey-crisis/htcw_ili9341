@@ -37,7 +37,7 @@ struct ili9341x final {
     using bus = Bus;
     using pixel_type = gfx::rgb_pixel<16>;
     using caps = gfx::gfx_caps<false, (bus::dma_size > 0), true, true, false, bus::readable, true>;
-    ili9341x() : m_initialized(false), m_dma_initialized(false), m_in_batch(false) {
+    ili9341x() : m_initialized(false), m_dma_initialized(false), m_in_batch(false),m_rotation(initial_rotation) {
     }
     ~ili9341x() {
         if (m_dma_initialized) {
@@ -52,7 +52,6 @@ struct ili9341x final {
             if (driver::initialize()) {
                 bus::begin_initialization();
                 bus::set_speed_multiplier(write_speed_multiplier);
-                m_rotation = initial_rotation;
                 bus::begin_write();
                 bus::begin_transaction();
                 if (display_type == ili9341_display_type::v_variant) {
