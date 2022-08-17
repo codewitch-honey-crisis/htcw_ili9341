@@ -868,7 +868,7 @@ struct ili9341x final {
                 if (display_type == ili9341_display_type::ili9342c) {
                     driver::send_data8( 0x40 | 0x80 | 0x08);
                 } else {
-                    driver::send_data8(0x40 | 0x80 | 0x08);
+                    driver::send_data8(0x40 | 0x80 | 0x20 | 0x08);
                 }
 
                 break;
