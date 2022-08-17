@@ -37,7 +37,12 @@ struct ili9341x final {
     using bus = Bus;
     using pixel_type = gfx::rgb_pixel<16>;
     using caps = gfx::gfx_caps<false, (bus::dma_size > 0), true, true, false, bus::readable, true>;
-    ili9341x() : m_initialized(false), m_dma_initialized(false), m_in_batch(false),m_rotation(initial_rotation) {
+    bool m_initialized;
+    uint8_t m_rotation;
+    bool m_dma_initialized;
+    bool m_in_batch;
+    static int m_row;
+    ili9341x() : m_initialized(false), m_rotation(initial_rotation), m_dma_initialized(false), m_in_batch(false) {
     }
     ~ili9341x() {
         if (m_dma_initialized) {
