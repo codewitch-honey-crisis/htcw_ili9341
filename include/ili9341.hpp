@@ -546,7 +546,7 @@ struct ili9341x final {
         driver::dc_data();
         bus::write_raw16(bounds.x1);
         bus::write_raw16(bounds.x2);
-        if (m_row != bounds.x1) {
+        if (m_row != bounds.y1) {
             driver::dc_command();
             bus::write_raw8(0x2B);
             driver::dc_data();
